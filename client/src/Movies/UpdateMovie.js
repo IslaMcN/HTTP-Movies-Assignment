@@ -1,72 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-class UpdateMovie extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state ={
-            movieCard: {
-                Director: '',
-                Metascore: '',
-                MovieStars: []
-
-            }
-        };
-    }
-    handleChange = e => {
-        this.setState({
-            movieCard: {
-                ...this.state.movieCard,
-                [e.target.name]: e.target.value
-            }
+const initialMovie = {
+    id: 5,
+    title: 'Tombstone',
+    director: 'GPC',
+    metascore: 89,
+    starts: ['KR', 'BP', 'SE'],
+}
+const UpdateMovie = props => {
+    const [movie, setMovie] = useState(initialMovie);
+    const {match, movies} = props;
+    useEffect(() => {
+        const id = match.params.id;
+        const movieToUpdate = movies.find(movie => `${movie.id}` === id);
+        if (movieToUpdate) {
+            setMovie(movieToUpdate);
+        }
+    }, [match, movies]);
+    const changeHandler = e => {
+        e.persist();
+        let value = e.target.value;
+        if (e.target.name === 'price') {
+            value = parseInt(value, 10);
+        }
+        setMovie({
+            ...movie,
+            [e.target.name]: value
         });
     };
-    putMessage = e => {
+    const handleSubmit = e => {
         e.preventDefault();
-        axios.put('http://localhost:5000/api/movies', e)
+        axios.put(`http://localhost:5000/api/movies/${movie.id}`, movie)
         .then(res => {
-            this.setState({
-                SuccessMessage: res.data,
-                Error: ''
-            });
+            props.updateMovie(res.data);
+            props.history.push(`/movie-list/${movie.id}`);
+            setMovie(initialMovie);
         })
-        .catch(err => {
-            this.setState({
-                SuccessMessage: '',
-                Error: err.response.data
-            });
-        });
+        .catch(err => console.log(err.response));
     };
-    render(){
-        return(
-            <div>
-                <h1>Update Movie</h1>
-                <form onSubmit={this.putMessage}>
-                    <input
-                    type="text"
-                    name="Director"
-                    placeholder="Director"
-                    onChange={this.handleChange}
-                    value={this.state.movieCard.Director}
-                    />
-                    <input
-                    type="text"
-                    name="Metascore"
-                    placeholder="Metascore"
-                    onChange={this.handleChange}
-                    value={this.state.movieCard.Metascore}
-                    />
-                    <input
-                    type="text"
-                    name="Movie Stars"
-                    placeholder="Movie Stars"
-                    onChange={this.handleChange}
-                    value={this.state.movieCard.MovieStars}
-                    />
-                    <button type="submit">Update!</button>
-                </form>
-            </div>
-        );
-    }
+    return (
+        <div>
+            <h2>Update</h2>
+            <form onSubmit={handleSubmit}>
+                <input
+                type="text"
+                name="Title"
+                onChange={changeHandler}
+                placeholder="title"
+                value={movie.title}
+                />
+                <input
+                type="text"
+                name="Director"
+                onChange={changeHandler}
+                placeholder="Director"
+                value={movie.director}
+                />
+                <input
+                type="text"
+                name="Metascore"
+                onChange={changeHandler}
+                placeholder="Metascore"
+                value={movie.metascore}
+                />
+                <input
+                type="text"
+                name="Movie Stars"
+                onChange={changeHandler}
+                placeholder="Movie Stars"
+                value={movie.moviestars}
+                />
+                <button>Update!</button>
+            </form>
+        </div>
+    )
 }
 
 export default UpdateMovie;
